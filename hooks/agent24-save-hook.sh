@@ -49,6 +49,8 @@ except Exception:
 try:
     session_id = str(data.get("session_id", "unknown"))
     stop_hook_active = data.get("stop_hook_active", False)
+    if isinstance(stop_hook_active, str):
+        stop_hook_active = stop_hook_active.lower() in ("true", "1", "yes")
     transcript_path = str(data.get("transcript_path", ""))
 
     # Re-entry guard

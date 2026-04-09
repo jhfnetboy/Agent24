@@ -93,14 +93,14 @@ For each component in `components.yaml` that has a `local_path`:
 **Solution:** Use a shared git repo as the source of truth for org context.
 
 1. Validate URL: must start with `https://` or `git@`. Reject URLs containing `$`, backticks, `"`, `'`, `\`, newlines, `;`, `&`, `|`, or whitespace (except in `git@host:path` format).
-2. If `~/.claude/org/` already has `.git`: just update remote: `git -C ~/.claude/org remote set-url origin {url}`
+2. If `~/.claude/org/` already has `.git`: assign URL to variable, then update remote: `url='validated-url'; git -C ~/.claude/org remote set-url origin "$url"`
 3. If `~/.claude/org/` exists but is NOT a git repo:
    - Generate unique backup name: `backup_dir="$HOME/.claude/org.bak.$(date +%s)"`
    - Back up: `mv ~/.claude/org/ "$backup_dir"`
    - Clone: assign URL to variable first: `url='...'; git clone "$url" ~/.claude/org/`
    - If clone fails: `rm -rf ~/.claude/org/ ; mv "$backup_dir" ~/.claude/org/` and report error
-   - If clone succeeds: `cp -n "$backup_dir"/* ~/.claude/org/ 2>/dev/null; rm -rf "$backup_dir"`
-4. If `~/.claude/org/` doesn't exist: `git clone {url} ~/.claude/org/`
+   - If clone succeeds: `cp -rn "$backup_dir"/* ~/.claude/org/ 2>/dev/null; rm -rf "$backup_dir"`
+4. If `~/.claude/org/` doesn't exist: `url='validated-url'; git clone "$url" ~/.claude/org/`
 5. Report: "Org context now synced to {url}"
 
 ### `/org-sync pull` — Pull Latest Org Context from Shared Repo

@@ -83,20 +83,36 @@ SETTINGS_FILE="${CLAUDE_DIR}/settings.json"
 SAVE_HOOK="${HOOKS_TARGET}/agent24-save-hook.sh"
 PRECOMPACT_HOOK="${HOOKS_TARGET}/agent24-precompact-hook.sh"
 
-# Only add hooks if BOTH agent24 hooks are already configured
-if [ -f "$SETTINGS_FILE" ] && grep -q "agent24-save-hook" "$SETTINGS_FILE" 2>/dev/null && grep -q "agent24-precompact-hook" "$SETTINGS_FILE" 2>/dev/null; then
-    echo -e "  ${YELLOW}~${NC} Skipped: hooks already configured in settings.json"
-else
-    if [ -f "$SETTINGS_FILE" ]; then
-        # Backup existing settings
-        mkdir -p "${BACKUP_DIR}"
-        cp "$SETTINGS_FILE" "${BACKUP_DIR}/settings.json"
-        echo -e "  ${YELLOW}↻${NC} Backed up existing settings.json"
-    fi
-    # Merge hooks into settings using Python (atomic write via temp file + rename)
-    SAVE_HOOK_PATH="$SAVE_HOOK" PRECOMPACT_HOOK_PATH="$PRECOMPACT_HOOK" \
-    SETTINGS_PATH="$SETTINGS_FILE" \
-    python3 -c '
+# Remove any existing agent24 hooks before adding fresh ones (prevents duplicates)
+if [ -f "$SETTINGS_FILE" ] && grep -q "agent24-" "$SETTINGS_FILE" 2>/dev/null; then
+    echo -e "  ${YELLOW}↻${NC} Removing existing agent24 hooks (will re-add fresh)"
+    SETTINGS_PATH="$SETTINGS_FILE" python3 -c '
+import json, os
+sf = os.environ["SETTINGS_PATH"]
+with open(sf) as f:
+    settings = json.load(f)
+hooks = settings.get("hooks", {})
+for event in ["Stop", "PreCompact"]:
+    if event in hooks:
+        hooks[event] = [h for h in hooks[event] if not any("agent24-" in str(hh.get("command","")) for hh in h.get("hooks",[]))]
+        if not hooks[event]:
+            del hooks[event]
+with open(sf, "w") as f:
+    json.dump(settings, f, indent=2)
+' 2>/dev/null || true
+fi
+
+if [ -f "$SETTINGS_FILE" ]; then
+    # Backup existing settings
+    mkdir -p "${BACKUP_DIR}"
+    cp "$SETTINGS_FILE" "${BACKUP_DIR}/settings.json"
+    echo -e "  ${YELLOW}↻${NC} Backed up existing settings.json"
+fi
+
+# Add fresh hooks (atomic write via temp file + rename)
+SAVE_HOOK_PATH="$SAVE_HOOK" PRECOMPACT_HOOK_PATH="$PRECOMPACT_HOOK" \
+SETTINGS_PATH="$SETTINGS_FILE" \
+python3 -c '
 import json, os, tempfile
 
 sf = os.environ["SETTINGS_PATH"]
@@ -121,7 +137,6 @@ with os.fdopen(tmp_fd, "w") as f:
 os.replace(tmp_path, sf)
 ' 2>/dev/null && echo -e "  ${GREEN}+${NC} Configured Stop + PreCompact hooks in settings.json" \
               || echo -e "  ${YELLOW}!${NC} Could not configure hooks (Python 3 required). Add manually."
-fi
 
 # Clean up empty backup dir
 [ -d "$BACKUP_DIR" ] || true
