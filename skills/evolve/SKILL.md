@@ -42,7 +42,7 @@ Key principles:
 
 ## Phase 3: Staged Evaluation (HyperAgents-inspired)
 
-Read `evaluation.staged` from `agent-config.yaml` (default: true). If `staged` is false, skip Stage 1 gating and always run full evaluation (Stage 2).
+Read `evaluation.staged` from `agent-config.yaml` (default: true).
 
 Evaluation is **staged** to avoid wasting effort on failed attempts:
 
@@ -57,11 +57,13 @@ Verify by checking:
 
 Score correctness 1-5. Read `evaluation.correctness_gate` from `agent-config.yaml` (default: 3).
 
-**If correctness < correctness_gate → STOP evaluation here.** Overall score = min(2, correctness). Skip to Phase 4 with only the correctness score. This saves effort on detailed evaluation of failed work.
+**If `staged` is true AND correctness < correctness_gate → STOP evaluation here.** Overall score = min(2, correctness). Skip to Phase 4 with only the correctness score. This saves effort on detailed evaluation of failed work.
 
-### Stage 2: Full Evaluation (only if Stage 1 passes)
+**If `staged` is false → always proceed to Stage 2** regardless of correctness score. The correctness score is still recorded but does not gate.
 
-Only reached when correctness >= correctness_gate. Score all dimensions:
+### Stage 2: Full Evaluation (only if Stage 1 passes, or staged=false)
+
+Score all dimensions (reached when correctness >= correctness_gate, or when `staged` is false):
 
 | Dimension | Score (1-5) | Notes |
 |-----------|-------------|-------|
@@ -121,8 +123,8 @@ type: feedback
 
 Read `agent-config.yaml` (in cwd, or `~/.claude/agent-config.yaml`) and update the strategy used:
 - Increment `uses` by 1
-- Update `success_rate` with running average: `new = (old * (uses-1) + (score >= eval.correctness_gate ? 1 : 0)) / uses`
-- Read `evaluation.correctness_gate` from config (default: 3) for the gating threshold
+- Update `success_rate` with running average: `new = (old * (uses-1) + (result == "success" ? 1 : 0)) / uses`
+- A cycle counts as success only when `result` is `"success"` (both correctness and overall score >= gate). `"partial"` and `"failed"` count as 0.
 - Do NOT add fields that don't exist in the config schema
 
 ### 4c. Archive to Results Log (DGM-inspired)
@@ -134,8 +136,8 @@ Append a **structured YAML block** (not just a TSV line). This enables lineage t
 
 ```yaml
 ---
-id: "{ISO-datetime}-{task-type}"      # unique cycle ID, e.g. "2026-04-09T15:30:00-coding"
-date: "{ISO-datetime}"                # full ISO-8601 with time, e.g. "2026-04-09T15:30:00"
+id: "{ISO-datetime-UTC}-{task-type}"  # unique cycle ID, e.g. "2026-04-09T07:30:00Z-coding"
+date: "{ISO-datetime-UTC}"            # full ISO-8601 with time in UTC, e.g. "2026-04-09T07:30:00Z"
 task_type: "{coding|debugging|refactoring|analysis|research|automation}"
 task: "{one-line task description}"
 strategy: "{approach used}"
@@ -146,7 +148,7 @@ parent: "{id of previous cycle on same task type, or null}"
 insight: "{one-line key takeaway}"
 ```
 
-**ID uniqueness:** Use full ISO-8601 datetime (with hours:minutes:seconds) + task_type. This prevents same-day collisions. If two cycles happen in the same second (unlikely), append `-2`, `-3` etc.
+**ID uniqueness:** Use full ISO-8601 datetime in UTC (with `Z` suffix) + task_type. Always use UTC to ensure consistent ordering across machines. If two cycles happen in the same second (unlikely), append `-2`, `-3` etc.
 
 **Result mapping:**
 - `success`: correctness >= correctness_gate AND overall score >= correctness_gate

@@ -79,10 +79,10 @@ Ask about the current working directory's project:
 5. **有什么正在进行的重要工作或已知问题？**
 
 With answers:
-- Add this project to `~/.claude/org/components.yaml` (if org exists). **Follow `/org-sync` safety rules:** `local_path` must be absolute, must not contain `$`, backticks, `"`, `'`, or `\`. Validate before writing.
+- Add this project to `~/.claude/org/components.yaml` (if org exists). **Follow ALL `/org-sync` safety rules:** `local_path` must be absolute (no `~`), must not contain `$`, backticks, `"`, `'`, `\`, or newlines. Validate before writing.
 - Create project-level `.claude/memory/` directory (`mkdir -p .claude/memory`)
-- Write a `project-overview.md` memory (type: project) with key project facts
-- Update `.claude/memory/MEMORY.md` index
+- Write a `project-overview.md` memory with front-matter (`name: project-overview`, `type: project`)
+- Append index line to `.claude/memory/MEMORY.md`: `- [project-overview](project-overview.md) — {desc}`
 
 ## Step 4: Tool & Service References
 
@@ -94,11 +94,13 @@ Ask:
 4. **文档在哪？** — 内部 wiki、Notion、README 等
 5. **沟通渠道？** — Slack 频道、Discord、微信群等
 
-Save as reference memories in `~/.claude/memory/`:
-- `reference-project-management.md`
-- `reference-cicd.md`
-- `reference-monitoring.md`
-- etc. (only create files for tools the user actually uses)
+Save as reference memories in `~/.claude/memory/` (only create files for tools the user actually uses):
+- `reference-project-management.md` (type: reference)
+- `reference-cicd.md` (type: reference)
+- `reference-monitoring.md` (type: reference)
+- etc.
+
+Every file MUST have front-matter (`name/description/type`) and be indexed in `~/.claude/memory/MEMORY.md`.
 
 ## Step 5: Preferences & Conventions
 
@@ -111,10 +113,12 @@ Ask:
 5. **有什么特别的偏好或禁忌？** — 例如 "不要自动 push"、"总是先讨论方案"
 
 Save as feedback memories in `~/.claude/memory/`:
-- `feedback-git-conventions.md`
-- `feedback-code-style.md`
-- `feedback-testing.md`
-- `feedback-misc.md`
+- `feedback-git-conventions.md` (type: feedback)
+- `feedback-code-style.md` (type: feedback)
+- `feedback-testing.md` (type: feedback)
+- `feedback-misc.md` (type: feedback)
+
+Every file MUST have front-matter (`name/description/type`) and be indexed in `~/.claude/memory/MEMORY.md`.
 
 ## Step 6: Summary & Verification
 
