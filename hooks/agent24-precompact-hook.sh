@@ -35,31 +35,23 @@ if command -v python3 &>/dev/null; then
 fi
 
 PRECOMPACT_FLAG="${STATE_DIR}/precompact_blocked_${SID_HASH}"
-PRECOMPACT_LOCK="${STATE_DIR}/precompact_${SID_HASH}.lock"
 
 # Re-entry guard: if AI already saved, allow compaction
 if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
-    rm -f "$PRECOMPACT_FLAG" 2>/dev/null || true
+    rmdir "$PRECOMPACT_FLAG" 2>/dev/null || true
     echo '{"decision": "allow"}'
     exit 0
 fi
 
-# Locked flag check to prevent race between concurrent PreCompact invocations
-DECISION="block"
-(
-    flock -x 9 2>/dev/null || true
-    if [ -f "$PRECOMPACT_FLAG" ]; then
-        rm -f "$PRECOMPACT_FLAG" 2>/dev/null || true
-        echo "allow"
-    else
-        touch "$PRECOMPACT_FLAG" 2>/dev/null || true
-        echo "block"
-    fi
-) 9>"$PRECOMPACT_LOCK" > "${STATE_DIR}/.precompact_result_$$" 2>/dev/null
-DECISION=$(cat "${STATE_DIR}/.precompact_result_$$" 2>/dev/null || echo "block")
-rm -f "${STATE_DIR}/.precompact_result_$$" 2>/dev/null || true
-
-if [ "$DECISION" = "allow" ]; then
+# Atomic flag check using mkdir (POSIX-portable, no flock needed).
+# mkdir is atomic: only one concurrent caller succeeds; others get EEXIST.
+# If mkdir succeeds → first time → block. If it fails → already blocked → allow.
+if mkdir "$PRECOMPACT_FLAG" 2>/dev/null; then
+    # First invocation for this session — will block below
+    :
+else
+    # Already blocked once — clean up and allow
+    rmdir "$PRECOMPACT_FLAG" 2>/dev/null || true
     echo '{"decision": "allow"}'
     exit 0
 fi
