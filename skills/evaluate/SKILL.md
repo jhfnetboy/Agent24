@@ -76,11 +76,18 @@ List findings grouped by severity with **specific file:line references**:
 ## Step 5: Record to Memory (selective)
 
 Only write to memory if this evaluation revealed something **new and reusable**:
-- A recurring quality issue → save as feedback memory in `.claude/memory/`
+- A recurring quality issue → save as feedback memory
 - A project convention discovered → save as project memory
 - Nothing new → skip (most evaluations should skip this step)
 
-Storage: `mkdir -p .claude/memory` before writing. Update `MEMORY.md` index after.
+Storage contract (same as `/evolve`):
+- Create dir: `mkdir -p .claude/memory` (or `~/.claude/memory/` for global)
+- File naming: `eval-{sanitized-topic}.md` (alphanumeric + hyphens only)
+- Front-matter: standard memory format with `type: feedback` or `type: project`
+- After writing, append to `MEMORY.md` index using this exact format:
+  ```
+  - [{name}]({filename}) — {one-line description}
+  ```
 
 ## Step 6: Output Summary
 

@@ -71,10 +71,11 @@ Compare with memory: Did a known strategy help or fail? Is this a new pattern?
   ```
   - [{name}]({filename}) — {one-line description}
   ```
-- **Memory scope** (read `evolution.memory_scope` from config, default `auto`):
-  - `auto`: write to project memory (`.claude/memory/`) if inside a project, else global
-  - `project`: always `.claude/memory/`
-  - `global`: always `~/.claude/memory/`
+- **Memory write scope** (read `evolution.memory_scope` from config, default `auto`):
+  - `auto`: write to project memory (`.claude/memory/`) if inside a project with `.claude/`, else global
+  - `project`: write only to `.claude/memory/`
+  - `global`: write only to `~/.claude/memory/`
+  Note: Phase 0 always reads BOTH project and global memory for full context. This setting only controls where new memories are WRITTEN.
 
 **When to write:**
 - Score < 3: Record what failed, root cause, alternative approach
