@@ -83,8 +83,8 @@ SETTINGS_FILE="${CLAUDE_DIR}/settings.json"
 SAVE_HOOK="${HOOKS_TARGET}/agent24-save-hook.sh"
 PRECOMPACT_HOOK="${HOOKS_TARGET}/agent24-precompact-hook.sh"
 
-# Only add hooks if settings.json doesn't already have agent24 hooks
-if [ -f "$SETTINGS_FILE" ] && grep -q "agent24" "$SETTINGS_FILE" 2>/dev/null; then
+# Only add hooks if settings.json doesn't already have agent24 hook paths
+if [ -f "$SETTINGS_FILE" ] && grep -q "agent24-save-hook" "$SETTINGS_FILE" 2>/dev/null; then
     echo -e "  ${YELLOW}~${NC} Skipped: hooks already configured in settings.json"
 else
     if [ -f "$SETTINGS_FILE" ]; then
@@ -93,30 +93,33 @@ else
         cp "$SETTINGS_FILE" "${BACKUP_DIR}/settings.json"
         echo -e "  ${YELLOW}↻${NC} Backed up existing settings.json"
     fi
-    # Merge hooks into settings using Python (safe JSON manipulation)
-    python3 -c "
-import json, os
-sf = '$SETTINGS_FILE'
+    # Merge hooks into settings using Python (atomic write via temp file + rename)
+    SAVE_HOOK_PATH="$SAVE_HOOK" PRECOMPACT_HOOK_PATH="$PRECOMPACT_HOOK" \
+    SETTINGS_PATH="$SETTINGS_FILE" \
+    python3 -c '
+import json, os, tempfile
+
+sf = os.environ["SETTINGS_PATH"]
+save_hook = os.environ["SAVE_HOOK_PATH"]
+precompact_hook = os.environ["PRECOMPACT_HOOK_PATH"]
+
 settings = {}
 if os.path.exists(sf):
     with open(sf) as f:
         settings = json.load(f)
-hooks = settings.setdefault('hooks', {})
-# Add Stop hook
-stop_hooks = hooks.setdefault('Stop', [])
-stop_hooks.append({
-    'matcher': '',
-    'hooks': [{'type': 'command', 'command': '$SAVE_HOOK'}]
-})
-# Add PreCompact hook
-precompact_hooks = hooks.setdefault('PreCompact', [])
-precompact_hooks.append({
-    'matcher': '',
-    'hooks': [{'type': 'command', 'command': '$PRECOMPACT_HOOK'}]
-})
-with open(sf, 'w') as f:
+
+hooks = settings.setdefault("hooks", {})
+stop_hooks = hooks.setdefault("Stop", [])
+stop_hooks.append({"matcher": "", "hooks": [{"type": "command", "command": save_hook}]})
+precompact_hooks = hooks.setdefault("PreCompact", [])
+precompact_hooks.append({"matcher": "", "hooks": [{"type": "command", "command": precompact_hook}]})
+
+# Atomic write: temp file + rename
+tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(sf) or ".")
+with os.fdopen(tmp_fd, "w") as f:
     json.dump(settings, f, indent=2)
-" 2>/dev/null && echo -e "  ${GREEN}+${NC} Configured Stop + PreCompact hooks in settings.json" \
+os.replace(tmp_path, sf)
+' 2>/dev/null && echo -e "  ${GREEN}+${NC} Configured Stop + PreCompact hooks in settings.json" \
               || echo -e "  ${YELLOW}!${NC} Could not configure hooks (Python 3 required). Add manually."
 fi
 

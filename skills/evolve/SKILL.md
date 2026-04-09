@@ -30,7 +30,7 @@ If Phase 1 planning reveals a knowledge gap, use Grep to search across all memor
 
 Do NOT output anything for this phase. Just read and internalize.
 
-**Budget rule:** L0 + L1 should stay under 700 tokens total. L2 adds only what's relevant. This leaves maximum context for the actual task.
+**Budget rule:** L0 should stay under 200 tokens. L1 files (essential.md + blueprint + CLAUDE.md) are loaded in full but each has its own cap (essential < 500 tokens, blueprint < 2000 tokens). L2 adds only what's relevant. The goal is to minimize total context loading while keeping critical info available.
 
 ## Phase 1: Understand + Plan
 
@@ -197,8 +197,8 @@ Do NOT directly modify SKILL.md files. Write suggestions to memory for human rev
 
 After writing or skipping memory, regenerate `~/.claude/memory/essential.md`:
 
-1. Scan all memory files in `~/.claude/memory/` (and `.claude/memory/` if exists)
-2. Filter: `valid_to == null` (still valid) AND `importance >= 4`
+1. Read `~/.claude/memory/MEMORY.md` and `.claude/memory/MEMORY.md` indexes (not full files — just the index lines). Cap at 100 entries total.
+2. For entries with `importance >= 4`, Read just their front-matter (first 10 lines) to check `valid_to == null`
 3. Sort by importance (desc), then by created date (desc)
 4. Take top 10 entries
 5. Write `essential.md` with one line per entry: `- [{name}]: {description} (score: {importance})`

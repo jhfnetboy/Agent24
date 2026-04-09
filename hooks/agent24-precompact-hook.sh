@@ -1,21 +1,40 @@
 #!/usr/bin/env bash
 # Agent24 PreCompact Hook
 # Fires RIGHT BEFORE Claude Code compresses conversation context.
-# Always blocks — forces the AI to save everything important before
-# context is lost to compression.
+# Blocks ONCE to force the AI to save important context, then allows.
 #
 # Install: added to ~/.claude/settings.json by install.sh
 # Based on MemPalace's precompact hook pattern
 
-set -euo pipefail
+set -uo pipefail  # no -e: must always output valid JSON
 
 STATE_DIR="${HOME}/.claude/hook_state"
-mkdir -p "$STATE_DIR"
+LOG_FILE="${STATE_DIR}/hook.log"
+MAX_LOG_LINES=500
 
-# Log the compaction event
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) precompact triggered" >> "${STATE_DIR}/hook.log"
+mkdir -p "$STATE_DIR" 2>/dev/null || true
 
-# Always block — compaction means we're about to lose context
+# Rotate log if too large
+if [ -f "$LOG_FILE" ] && [ "$(wc -l < "$LOG_FILE" 2>/dev/null || echo 0)" -gt "$MAX_LOG_LINES" ]; then
+    tail -n 250 "$LOG_FILE" > "${LOG_FILE}.tmp" 2>/dev/null && mv "${LOG_FILE}.tmp" "$LOG_FILE" 2>/dev/null || true
+fi
+
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) precompact triggered" >> "$LOG_FILE" 2>/dev/null || true
+
+# Read input for re-entry guard
+INPUT=$(cat)
+STOP_HOOK_ACTIVE="false"
+if command -v python3 &>/dev/null; then
+    STOP_HOOK_ACTIVE=$(echo "$INPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(str(d.get('stop_hook_active', False)).lower())" 2>/dev/null || echo "false")
+fi
+
+# Re-entry guard: if AI already saved, allow compaction
+if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
+    echo '{"decision": "allow"}'
+    exit 0
+fi
+
+# Block once — force save before compaction
 cat <<'HOOKEOF'
 {
   "decision": "block",

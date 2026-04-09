@@ -92,13 +92,15 @@ For each component in `components.yaml` that has a `local_path`:
 
 **Solution:** Use a shared git repo as the source of truth for org context.
 
-1. If `~/.claude/org/` already has files, check if it's already a git repo (`test -e ~/.claude/org/.git`)
-2. If not a git repo:
-   - Back up existing files: `cp -r ~/.claude/org/ ~/.claude/org.bak.$(date +%s)`
-   - Clone the repo: `git clone {url} ~/.claude/org/`
-   - Merge any backup files that don't conflict
-3. If already a git repo, just update the remote: `git -C ~/.claude/org remote set-url origin {url}`
-4. Report: "Org context now synced to {url}"
+1. Validate URL: must start with `https://` or `git@`. Reject URLs containing `$`, backticks, `"`, `'`, `\`, newlines, `;`, `&`, `|`, or whitespace (except in `git@host:path` format).
+2. If `~/.claude/org/` already has `.git`: just update remote: `git -C ~/.claude/org remote set-url origin {url}`
+3. If `~/.claude/org/` exists but is NOT a git repo:
+   - Back up: `mv ~/.claude/org/ ~/.claude/org.bak.$(date +%s)`
+   - Clone: `git clone {url} ~/.claude/org/`
+   - If clone fails: restore backup (`mv ~/.claude/org.bak.* ~/.claude/org/`) and report error
+   - If clone succeeds: copy non-conflicting files from backup into the clone, then remove backup
+4. If `~/.claude/org/` doesn't exist: `git clone {url} ~/.claude/org/`
+5. Report: "Org context now synced to {url}"
 
 ### `/org-sync pull` — Pull Latest Org Context from Shared Repo
 
@@ -117,7 +119,15 @@ For each component in `components.yaml` that has a `local_path`:
    - Push: `git -C ~/.claude/org push`
 4. Report what was pushed
 
-**Security:** The repo URL is validated the same way as `local_path` — reject URLs containing `$`, backticks, `"`, `'`, `\`, or newlines. Only HTTPS and SSH (`git@`) URLs are accepted.
+**Security:**
+- URL must start with `https://` or `git@` — reject all other schemes
+- Reject URLs containing: `$`, backticks, `"`, `'`, `\`, newlines, `;`, `&`, `|`, or spaces
+- Always assign URL to a shell variable and quote it: `url='...'; git clone "$url" ...`
+- Commit message uses a fixed format — hostname is passed via variable, never interpolated:
+  ```bash
+  host=$(hostname)
+  git -C ~/.claude/org commit -m "org-sync: update from $host"
+  ```
 
 ### Team Workflow
 
