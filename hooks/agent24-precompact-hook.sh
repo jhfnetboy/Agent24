@@ -36,6 +36,11 @@ fi
 
 PRECOMPACT_FLAG="${STATE_DIR}/precompact_blocked_${SID_HASH}"
 
+# Clean up legacy file-based flag from previous versions (upgrade compat)
+if [ -e "$PRECOMPACT_FLAG" ] && [ ! -d "$PRECOMPACT_FLAG" ]; then
+    rm -f "$PRECOMPACT_FLAG" 2>/dev/null || true
+fi
+
 # Re-entry guard: if AI already saved, allow compaction
 if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
     rmdir "$PRECOMPACT_FLAG" 2>/dev/null || true
