@@ -34,7 +34,7 @@ import json, sys, os, tempfile, fcntl
 ALLOW = json.dumps({"decision": "allow"})
 
 try:
-    save_interval = int(os.environ.get("SAVE_INTERVAL", "15"))
+    save_interval = max(1, int(os.environ.get("SAVE_INTERVAL", "15")))
 except (ValueError, TypeError):
     save_interval = 15
 state_file = os.environ.get("STATE_FILE", "")

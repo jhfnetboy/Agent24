@@ -25,16 +25,16 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) precompact triggered" >> "$LOG_FILE" 2>/dev
 INPUT=$(cat)
 STOP_HOOK_ACTIVE="false"
 if command -v python3 &>/dev/null; then
-    STOP_HOOK_ACTIVE=$(echo "$INPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(str(d.get('stop_hook_active', False)).lower())" 2>/dev/null || echo "false")
+    STOP_HOOK_ACTIVE=$(printf '%s' "$INPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(str(d.get('stop_hook_active', False)).lower())" 2>/dev/null || echo "false")
 fi
 
-# Extract session_id for session-scoped flag
-SESSION_ID="unknown"
+# Extract session_id and hash it for safe filenames (no path traversal)
+SID_HASH="unknown"
 if command -v python3 &>/dev/null; then
-    SESSION_ID=$(printf '%s' "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('session_id','unknown'))" 2>/dev/null || echo "unknown")
+    SID_HASH=$(printf '%s' "$INPUT" | python3 -c "import sys,json,hashlib; sid=json.load(sys.stdin).get('session_id','unknown'); print(hashlib.sha256(sid.encode()).hexdigest()[:16])" 2>/dev/null || echo "unknown")
 fi
 
-PRECOMPACT_FLAG="${STATE_DIR}/precompact_blocked_${SESSION_ID}"
+PRECOMPACT_FLAG="${STATE_DIR}/precompact_blocked_${SID_HASH}"
 
 # Re-entry guard: if AI already saved, allow compaction
 if [ "$STOP_HOOK_ACTIVE" = "true" ]; then

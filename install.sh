@@ -94,8 +94,17 @@ with open(sf) as f:
 hooks = settings.get("hooks", {})
 for event in ["Stop", "PreCompact"]:
     if event in hooks:
-        hooks[event] = [h for h in hooks[event] if not any("agent24-" in str(hh.get("command","")) for hh in h.get("hooks",[]))]
-        if not hooks[event]:
+        cleaned = []
+        for entry in hooks[event]:
+            # Filter out only agent24 commands, keep other commands in same entry
+            inner = entry.get("hooks", [])
+            inner = [h for h in inner if "agent24-" not in str(h.get("command", ""))]
+            if inner:
+                entry["hooks"] = inner
+                cleaned.append(entry)
+        if cleaned:
+            hooks[event] = cleaned
+        else:
             del hooks[event]
 with open(sf, "w") as f:
     json.dump(settings, f, indent=2)
