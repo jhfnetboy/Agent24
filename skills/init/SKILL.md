@@ -32,12 +32,25 @@ Ask these questions (adapt phrasing naturally, don't read them like a form):
 3. **你的经验水平？** — 对哪些领域很熟悉，哪些是新接触的？
 4. **偏好的工作方式？** — 喜欢详细解释还是简洁回答？喜欢先讨论方案还是直接动手？
 
-Save answers to user memory files in `~/.claude/memory/`:
-- `user_role.md` — role, experience level
-- `user_tech_stack.md` — languages, frameworks, tools
-- `user_preferences.md` — communication and work style preferences
+Save answers to user memory files in `~/.claude/memory/` (create with `mkdir -p` first):
+- `user-role.md` — role, experience level (type: user)
+- `user-tech-stack.md` — languages, frameworks, tools (type: user)
+- `user-preferences.md` — communication and work style preferences (type: feedback)
 
-Update `~/.claude/memory/MEMORY.md` index after each file.
+Each file MUST have front-matter matching the memory system contract:
+```markdown
+---
+name: user-role
+description: {one-line description}
+type: user
+---
+{content}
+```
+
+After writing each file, append an index line to `~/.claude/memory/MEMORY.md`:
+```
+- [{name}]({filename}) — {one-line description}
+```
 
 ## Step 2: Organization Context
 
@@ -66,9 +79,9 @@ Ask about the current working directory's project:
 5. **有什么正在进行的重要工作或已知问题？**
 
 With answers:
-- Add this project to `~/.claude/org/components.yaml` (if org exists)
-- Create project-level `.claude/memory/` directory
-- Write a `project_overview.md` memory with key project facts
+- Add this project to `~/.claude/org/components.yaml` (if org exists). **Follow `/org-sync` safety rules:** `local_path` must be absolute, must not contain `$`, backticks, `"`, `'`, or `\`. Validate before writing.
+- Create project-level `.claude/memory/` directory (`mkdir -p .claude/memory`)
+- Write a `project-overview.md` memory (type: project) with key project facts
 - Update `.claude/memory/MEMORY.md` index
 
 ## Step 4: Tool & Service References
@@ -82,9 +95,9 @@ Ask:
 5. **沟通渠道？** — Slack 频道、Discord、微信群等
 
 Save as reference memories in `~/.claude/memory/`:
-- `reference_project_management.md`
-- `reference_cicd.md`
-- `reference_monitoring.md`
+- `reference-project-management.md`
+- `reference-cicd.md`
+- `reference-monitoring.md`
 - etc. (only create files for tools the user actually uses)
 
 ## Step 5: Preferences & Conventions
@@ -98,10 +111,10 @@ Ask:
 5. **有什么特别的偏好或禁忌？** — 例如 "不要自动 push"、"总是先讨论方案"
 
 Save as feedback memories in `~/.claude/memory/`:
-- `feedback_git_conventions.md`
-- `feedback_code_style.md`
-- `feedback_testing.md`
-- `feedback_misc.md`
+- `feedback-git-conventions.md`
+- `feedback-code-style.md`
+- `feedback-testing.md`
+- `feedback-misc.md`
 
 ## Step 6: Summary & Verification
 
@@ -115,11 +128,11 @@ After collecting all info, output a structured summary:
 **Current Project:** {name} — {description}
 
 ### Files Created
-- ~/.claude/memory/user_role.md
-- ~/.claude/memory/user_tech_stack.md
+- ~/.claude/memory/user-role.md
+- ~/.claude/memory/user-tech-stack.md
 - ~/.claude/org/blueprint.md
 - ~/.claude/org/components.yaml
-- .claude/memory/project_overview.md
+- .claude/memory/project-overview.md
 - ... (list all)
 
 ### What's Next

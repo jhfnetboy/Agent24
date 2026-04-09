@@ -93,7 +93,7 @@ For each component in `components.yaml` that has a `local_path`:
 **Context Engineering rules for blueprint:**
 - Vision: 1-2 sentences max
 - Architecture: ASCII diagram preferred over prose (higher info density)
-- Components: one line each — `name: role` format, NO descriptions (those live in components.yaml)
+- Components: one line each — `name: role` format. Role = what it does in the system (e.g. "API gateway"). Description = how it works (lives in components.yaml, NOT here)
 - Put the most frequently referenced info at the TOP (high recall position)
 
 ```markdown
@@ -108,7 +108,7 @@ For each component in `components.yaml` that has a `local_path`:
 {  frontend → api-gateway → [auth, data-service] → database }
 
 ## Components
-- {name}: {role in 5-10 words}
+- **{current-project}**: {role in 5-10 words}  ← always list current project first
 - {name}: {role in 5-10 words}
 
 ## Shared Resources

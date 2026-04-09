@@ -42,6 +42,8 @@ Key principles:
 
 ## Phase 3: Staged Evaluation (HyperAgents-inspired)
 
+Read `evaluation.staged` from `agent-config.yaml` (default: true). If `staged` is false, skip Stage 1 gating and always run full evaluation (Stage 2).
+
 Evaluation is **staged** to avoid wasting effort on failed attempts:
 
 ### Stage 1: Quick Correctness Check (always run)
@@ -132,9 +134,9 @@ Append a **structured YAML block** (not just a TSV line). This enables lineage t
 
 ```yaml
 ---
-id: "{ISO-date}-{task-type-short}"    # unique cycle ID
-date: "{ISO-date}"
-task_type: "{coding|debugging|refactoring|analysis|research}"
+id: "{ISO-datetime}-{task-type}"      # unique cycle ID, e.g. "2026-04-09T15:30:00-coding"
+date: "{ISO-datetime}"                # full ISO-8601 with time, e.g. "2026-04-09T15:30:00"
+task_type: "{coding|debugging|refactoring|analysis|research|automation}"
 task: "{one-line task description}"
 strategy: "{approach used}"
 score: {overall-score}
@@ -143,6 +145,13 @@ result: "{success|partial|failed}"
 parent: "{id of previous cycle on same task type, or null}"
 insight: "{one-line key takeaway}"
 ```
+
+**ID uniqueness:** Use full ISO-8601 datetime (with hours:minutes:seconds) + task_type. This prevents same-day collisions. If two cycles happen in the same second (unlikely), append `-2`, `-3` etc.
+
+**Result mapping:**
+- `success`: correctness >= correctness_gate AND overall score >= correctness_gate
+- `partial`: correctness >= correctness_gate BUT overall score < correctness_gate
+- `failed`: correctness < correctness_gate
 
 **Lineage rule:** Before appending, scan the archive for the most recent entry with the same `task_type`. If found, set `parent` to that entry's `id`. This creates a per-task-type improvement chain that shows whether strategies are trending up or down.
 
