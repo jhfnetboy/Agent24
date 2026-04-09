@@ -33,16 +33,28 @@ Ask these questions (adapt phrasing naturally, don't read them like a form):
 4. **偏好的工作方式？** — 喜欢详细解释还是简洁回答？喜欢先讨论方案还是直接动手？
 
 Save answers to user memory files in `~/.claude/memory/` (create with `mkdir -p` first):
+- `identity.md` — **Layer 0**: one-paragraph summary of who the user is (loaded every /evolve cycle). Keep under 100 tokens. No front-matter needed — this is a plain text file, not a memory entry.
 - `user-role.md` — role, experience level (type: user)
 - `user-tech-stack.md` — languages, frameworks, tools (type: user)
 - `user-preferences.md` — communication and work style preferences (type: feedback)
 
-Each file MUST have front-matter matching the memory system contract:
+**identity.md format** (plain text, ~50-100 tokens):
+```
+{Name} is a {role} at {org}. Tech stack: {languages/frameworks}.
+Experience: {senior/mid/junior} in {domains}. Prefers {work style}.
+Currently focused on: {current projects/goals}.
+```
+
+All other files MUST have front-matter matching the memory system contract:
 ```markdown
 ---
 name: user-role
 description: {one-line description}
 type: user
+created: "{ISO-date}"
+valid_from: "{ISO-date}"
+valid_to: null
+importance: {1-5}
 ---
 {content}
 ```
