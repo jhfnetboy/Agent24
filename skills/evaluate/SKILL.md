@@ -10,19 +10,21 @@ Target: $ARGUMENTS
 ## Step 1: Identify What to Evaluate
 
 Determine the target (in priority order):
-- If a file path is given → verify it exists with `ls`, then evaluate the file
+- If a file path is given → verify it exists with the Read tool (not `ls`), then evaluate the file
 - If "last commit" is given → check `git rev-list --count HEAD`:
   - If >= 2: use `git diff HEAD~1`
   - If == 1: use `git show HEAD` (only commit, can't diff against parent)
   - If 0 or not a git repo: evaluate the working directory
 - If a PR number is given → check `which gh` first; if available, `gh pr diff {n}`; if not, say so and skip
 - If "project" is given → evaluate overall project health (read key files)
-- If nothing is given → use this fallback chain:
-  1. `git diff --cached` — if non-empty, evaluate staged changes
-  2. `git diff` — if non-empty, evaluate unstaged changes
-  3. `git rev-list --count HEAD` >= 2 → `git diff HEAD~1` (last commit)
-  4. `git rev-list --count HEAD` == 1 → `git show HEAD`
-  5. Not a git repo → evaluate the working directory
+- If nothing is given → first check `git rev-parse --is-inside-work-tree` to detect if in a git repo:
+  - **Not a git repo:** evaluate the working directory (read key files)
+  - **In a git repo**, use this fallback chain:
+    1. `git diff --cached` — if non-empty, evaluate staged changes
+    2. `git diff` — if non-empty, evaluate unstaged changes
+    3. `git rev-list --count HEAD` >= 2 → `git diff HEAD~1` (last commit)
+    4. `git rev-list --count HEAD` == 1 → `git show HEAD`
+    5. Clean repo with nothing to evaluate → report "nothing to evaluate"
 
 **Always verify the target exists before proceeding.** If it doesn't, report that clearly and stop.
 

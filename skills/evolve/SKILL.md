@@ -42,16 +42,18 @@ Key principles:
 
 ## Phase 3: Evaluate
 
-Self-assess with **correctness as the gating dimension**:
+Self-assess with **correctness as the gating dimension**.
+
+Read `evaluation.correctness_gate` from `agent-config.yaml` (default: 3). Use this as the threshold below.
 
 | Dimension | Score (1-5) | Notes |
 |-----------|-------------|-------|
-| **Correctness** | ? | Did it produce the right result? **If < 3, overall is capped at 2.** |
+| **Correctness** | ? | Did it produce the right result? **If below gate, overall is capped at 2.** |
 | Efficiency | ? | Could it have been done with fewer steps? |
 | Robustness | ? | Did error handling work? Were edge cases covered? |
 | Strategy | ? | Was the chosen approach optimal? |
 
-**Overall score** = if correctness < 3 then min(2, average) else average.
+**Overall score** = if correctness < correctness_gate then min(2, average) else average.
 
 Compare with memory: Did a known strategy help or fail? Is this a new pattern?
 
@@ -64,7 +66,15 @@ Compare with memory: Did a known strategy help or fail? Is this a new pattern?
 - Global memory dir: `~/.claude/memory/`
 - Create the directory if it doesn't exist (use Bash: `mkdir -p`)
 - File naming: `strategy-{task-type}-{sanitized-short-desc}.md` (alphanumeric + hyphens only)
-- After writing the file, append a line to the corresponding `MEMORY.md` index
+- Front-matter `name` field: use the same sanitized string as the filename (without `.md`)
+- After writing the file, append an index line to `MEMORY.md` in this exact format:
+  ```
+  - [{name}]({filename}) — {one-line description}
+  ```
+- **Memory scope** (read `evolution.memory_scope` from config, default `auto`):
+  - `auto`: write to project memory (`.claude/memory/`) if inside a project, else global
+  - `project`: always `.claude/memory/`
+  - `global`: always `~/.claude/memory/`
 
 **When to write:**
 - Score < 3: Record what failed, root cause, alternative approach

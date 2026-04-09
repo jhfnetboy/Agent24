@@ -61,7 +61,7 @@ If org context doesn't exist, suggest running `/org-sync init`.
 
 **Path validation:** If `local_path` is provided:
 - It MUST be an absolute path starting with `/`
-- Reject paths containing `$`, backticks, `"`, `\`, or newlines (these enable injection)
+- Reject paths containing `$`, backticks, `"`, `'`, `\`, or newlines (these enable injection)
 - Verify it exists using the Read tool or `test -d` with the path passed as a variable, not interpolated
 - If validation fails, report the issue and do not add the component
 
@@ -69,7 +69,7 @@ If org context doesn't exist, suggest running `/org-sync init`.
 
 For each component in `components.yaml` that has a `local_path`:
 1. Read the path from YAML using the Read tool (never parse YAML with shell)
-2. Validate: must start with `/`, must not contain `$`, backticks, `"`, or `\`
+2. Validate: must start with `/`, must not contain `$`, backticks, `"`, `'`, or `\`
 3. Verify it's a git repo: use Bash with path stored in a shell variable:
    ```bash
    path='/absolute/path/here'
@@ -136,7 +136,7 @@ shared:
 
 - **Don't inject org context into CLAUDE.md.** Org data is local/global only. Committing it leaks paths and creates merge conflicts across team members.
 - **Don't use `~` in local_path.** Use absolute paths (`/Users/...` or `/home/...`). Tilde expansion is unreliable in many contexts.
-- **Reject dangerous path characters.** Paths containing `$`, backticks, `"`, or `\` must be rejected at write-time. These enable command injection.
+- **Reject dangerous path characters.** Paths containing `$`, backticks, `"`, `'`, or `\` must be rejected at write-time. These enable command injection.
 - **Never interpolate paths into command strings.** Always use shell variables: `path='/foo'; git -C "$path" log`. Never `git -C "/foo" log` where `/foo` came from YAML.
 - **Check for .git before running git commands.** A valid directory isn't necessarily a git repo. `test -d "$path/.git"` first.
 - **Don't parse YAML with shell tools.** Use the Read tool to read `components.yaml`, then parse the content. Never `cat | grep` YAML.
