@@ -78,7 +78,9 @@ Score all dimensions (reached when correctness >= correctness_gate, or when `sta
 
 Compare with memory: Did a known strategy help or fail? Is this a new pattern? Quality trending up or down?
 
-### Determine Result Label (always, after evaluation completes)
+### Determine Result Label (after evaluation completes)
+
+Note: If Stage 1 early-exit already set `result` = `"failed"`, skip this step.
 
 Based on the scores, assign a `result` label for use in Phase 4:
 - **`success`**: correctness >= correctness_gate AND overall score >= correctness_gate
@@ -107,10 +109,11 @@ This label is used by Phase 4b (success_rate) and Phase 4c (archive).
   - `global`: write only to `~/.claude/memory/`
   Note: Phase 0 always reads BOTH project and global memory for full context. This setting only controls where new memories are WRITTEN.
 
-**When to write** (read thresholds from `agent-config.yaml`):
-- Overall score < `min_score_to_keep` (default 3): Record what failed, root cause, alternative approach
-- Overall score >= 4: Record what worked, task type, strategy used
-- Overall score >= `min_score_to_skip_memory` (default 5) with nothing new: Skip memory update
+**When to write** (read thresholds from `agent-config.yaml`, check rules in order — first match wins):
+1. Overall score >= `min_score_to_skip_memory` (default 5) AND nothing new learned: **Skip** memory update
+2. Overall score < `min_score_to_keep` (default 3): Record what **failed**, root cause, alternative approach
+3. Overall score >= `min_score_to_keep` AND result is `"success"`: Record what **worked**, task type, strategy used
+4. Otherwise (partial results, mid-range scores): Write only if a genuinely new insight emerged
 
 Memory file format:
 ```markdown
