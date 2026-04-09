@@ -72,11 +72,20 @@ Score all dimensions (reached when correctness >= correctness_gate, or when `sta
 | Robustness | ? | Did error handling work? Were edge cases covered? |
 | Strategy | ? | Was the chosen approach optimal? |
 
-**Overall score** = average of all dimensions.
+**Overall score** = average of all dimensions. **However, if correctness < correctness_gate, overall is capped at min(2, average) regardless of `staged` setting.** Correctness always gates the final score — `staged` only controls whether the remaining dimensions are evaluated, not whether they can override a bad correctness result.
 
 ### Stage 3: History Comparison (only if Stage 2 ran)
 
 Compare with memory: Did a known strategy help or fail? Is this a new pattern? Quality trending up or down?
+
+### Determine Result Label (always, after evaluation completes)
+
+Based on the scores, assign a `result` label for use in Phase 4:
+- **`success`**: correctness >= correctness_gate AND overall score >= correctness_gate
+- **`partial`**: correctness >= correctness_gate BUT overall score < correctness_gate
+- **`failed`**: correctness < correctness_gate
+
+This label is used by Phase 4b (success_rate) and Phase 4c (archive).
 
 ## Phase 4: Improve (the self-evolution step)
 
@@ -150,10 +159,7 @@ insight: "{one-line key takeaway}"
 
 **ID uniqueness:** Use full ISO-8601 datetime in UTC (with `Z` suffix) + task_type. Always use UTC to ensure consistent ordering across machines. If two cycles happen in the same second (unlikely), append `-2`, `-3` etc.
 
-**Result mapping:**
-- `success`: correctness >= correctness_gate AND overall score >= correctness_gate
-- `partial`: correctness >= correctness_gate BUT overall score < correctness_gate
-- `failed`: correctness < correctness_gate
+**Result mapping:** Use the `result` label determined at the end of Phase 3.
 
 **Lineage rule:** Before appending, scan the archive for the most recent entry with the same `task_type`. If found, set `parent` to that entry's `id`. This creates a per-task-type improvement chain that shows whether strategies are trending up or down.
 

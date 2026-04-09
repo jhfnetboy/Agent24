@@ -81,8 +81,8 @@ Ask about the current working directory's project:
 With answers:
 - Add this project to `~/.claude/org/components.yaml` (if org exists). **Follow ALL `/org-sync` safety rules:** `local_path` must be absolute (no `~`), must not contain `$`, backticks, `"`, `'`, `\`, or newlines. Validate before writing.
 - Create project-level `.claude/memory/` directory (`mkdir -p .claude/memory`)
-- Write a `project-overview.md` memory with front-matter (`name: project-overview`, `type: project`)
-- Append index line to `.claude/memory/MEMORY.md`: `- [project-overview](project-overview.md) — {desc}`
+- Write a `project-overview.md` memory with front-matter: `name: project-overview`, `description: {one-line}`, `type: project`
+- Append index line to `.claude/memory/MEMORY.md`: `- [project-overview](project-overview.md) — {one-line description}`
 
 ## Step 4: Tool & Service References
 
@@ -154,7 +154,8 @@ Ask the user: **有什么需要修改或补充的吗？** Make corrections if re
 - **Don't overwhelm.** Ask 2-4 questions at a time, not all at once. Group by topic (Steps 1-5).
 - **Respect existing data.** If files exist, show current values and ask if they want to update.
 - **Use the right memory types.** User info → `type: user`. Preferences → `type: feedback`. Project facts → `type: project`. Tool pointers → `type: reference`.
-- **Sanitize filenames.** Alphanumeric + hyphens only.
+- **Sanitize filenames.** Alphanumeric + hyphens only. Front-matter `name` MUST match the filename (without `.md`).
+- **Every memory file needs 3 things:** (1) front-matter with `name`/`description`/`type`, (2) content body, (3) index line in MEMORY.md. Missing any one makes the file invisible to /evolve.
 - **Create dirs before writing.** `mkdir -p ~/.claude/memory` and `mkdir -p .claude/memory`.
 - **Keep blueprint under 2000 tokens.** Summarize, don't transcribe.
 - **Chinese by default.** This user prefers Chinese. Adapt to the user's language from their first response.
