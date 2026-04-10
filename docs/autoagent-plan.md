@@ -1,111 +1,213 @@
-# AutoAgent 自进化 Agent 方案
+# Agent24 产品设计文档
 
-> 基于 Claude Code 订阅的自我迭代 Agent 系统，无需 API Key。
+> 自进化 Claude Code 技能组：执行 → 评估 → 进化，每个循环都让 Agent 更聪明。
 
-## 背景与约束
+## 产品定位
 
-- 只有 Claude Code 订阅（Max plan），没有独立 API Key
-- 目标：构建一个能自我进化、24 小时运行的 Agent
-- 参考了 Top 5 自进化 Agent 项目（见 `docs/top5.md`）
-- 参考了 Anthropic 官方 Managed Agents 架构思想（三层解耦：Brain / Hands / Session）
+Agent24 是一组安装到 `~/.claude/skills/` 的 **Claude Code Skills**，无需 API Key，只需 Claude Code 订阅。
 
-## 为什么不用其他方案
+**四个核心特征：**
+- **自我进化** — 每次执行后评估+改进策略，越用越强
+- **分层记忆** — L0-L3 按需加载，temporal validity，跨 session 持久化
+- **组织感知** — 蓝图 + 组件依赖 + 跨 repo 状态 + 跨机器同步
+- **主动通信** — Agent 之间通过 Nostr 协议广播-订阅-响应（规划中）
 
-| 方案 | 可行性 | 原因 |
-|------|--------|------|
-| Claude Managed Agents | ❌ | 需要 API Key，按用量计费 |
-| `agent-claude.py` + Docker | ❌ | `claude_agent_sdk` 需要 API Key |
-| `agent.py` + OpenAI | ❌ | 需要 OpenAI API Key |
-| **Claude Code 自身作为 Agent** | ✅ | 只需订阅，自带工具/memory/schedule |
-
-## 核心架构
+## 架构
 
 ```
-┌──────────────────────────────────────────┐
-│         Claude Code（你的订阅）             │
-│                                          │
-│  ┌──────────────┐   ┌────────────────┐   │
-│  │ Meta-Agent    │──→│ Worker Agent   │   │
-│  │ (主对话)      │   │ (subagent)     │   │
-│  │ 分析+决策+改进 │←──│ 执行具体任务    │   │
-│  └──────────────┘   └────────────────┘   │
-│         │                                │
-│  ┌──────────────────────────────────┐    │
-│  │ Memory 持久化 + Schedule 定时触发  │    │
-│  └──────────────────────────────────┘    │
-└──────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│              Claude Code（你的订阅）               │
+│                                                 │
+│  ┌──────────────────────────────────────────┐   │
+│  │ /evolve  — 自进化主循环                    │   │
+│  │   Phase 0: 分层记忆加载 (L0-L3)           │   │
+│  │   Phase 1: 理解 + 计划                    │   │
+│  │   Phase 2: 执行 (可 spawn Agent 子任务)    │   │
+│  │   Phase 3: 评估 (自评 + 可选外部评估)      │   │
+│  │   Phase 4: 改进 (memory + config + archive)│   │
+│  │   Phase 5: 报告                           │   │
+│  └──────────────────────────────────────────┘   │
+│                                                 │
+│  ┌─────────┐ ┌──────────┐ ┌──────────────────┐ │
+│  │ /setup  │ │ /evaluate│ │ /org-sync        │ │
+│  │ 交互初始化│ │ 独立评估  │ │ 组织上下文管理   │ │
+│  └─────────┘ └──────────┘ └──────────────────┘ │
+│                                                 │
+│  ┌──────────────────────────────────────────┐   │
+│  │ Memory System                            │   │
+│  │  L0: identity.md (~100 token, 每次加载)   │   │
+│  │  L1: essential.md + blueprint (<2500 tok) │   │
+│  │  L2: 按索引选择性加载相关 memory            │   │
+│  │  L3: 深度 grep 搜索 (仅需要时)             │   │
+│  └──────────────────────────────────────────┘   │
+│                                                 │
+│  ┌──────────────────────────────────────────┐   │
+│  │ Auto-Save Hooks                          │   │
+│  │  Stop: 每 15 条消息自动保存 memory          │   │
+│  │  PreCompact: 上下文压缩前紧急保存           │   │
+│  └──────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────┘
+         │                          │
+         ▼                          ▼
+  ┌─────────────┐          ┌────────────────┐
+  │ Org Context  │          │ Agent Speaker  │
+  │ ~/.claude/org│          │ (Nostr MCP)    │
+  │ 可 git 同步  │          │ 跨 Agent 通信   │
+  └─────────────┘          └────────────────┘
 ```
 
-### 三个核心组件
+## 技能清单
 
-| 组件 | 形式 | 作用 |
+| 技能 | 命令 | 功能 |
 |------|------|------|
-| **Skill** | `/evolve` 命令 | 启动迭代循环：执行任务 → 评估 → 改进策略 → 记录 |
-| **Memory** | 持久化文件 | 跨 session 积累经验：什么有效、什么失败、如何改进 |
-| **Schedule** | 定时触发 | 24 小时无人值守运行 |
+| **evolve** | `/evolve <task>` | 自进化主循环：执行→评估→改进→记录 |
+| **evaluate** | `/evaluate [target]` | 独立多维度评估（代码/commit/PR/项目） |
+| **setup** | `/setup` | 交互式初始化：收集用户/组织/项目/偏好信息 |
+| **org-sync** | `/org-sync [cmd]` | 组织上下文管理：蓝图/组件/状态/git 同步 |
 
-### 自进化循环
+## 评估系统
 
+### 自评估（默认）
+
+Phase 3 分阶段评估：
+1. **Stage 1**: 正确性快速检查（correctness gate）
+2. **Stage 2**: 全维度评估（correctness/efficiency/robustness/strategy）
+3. **Stage 3**: 历史比较（与 memory 中的策略对比）
+
+正确性门控：correctness < gate → overall 封顶为 2，防止"漂亮但错误"的高分。
+
+### 外部评估（可选，配置驱动）
+
+```yaml
+# agent-config.yaml
+evaluation:
+  evaluator: "self"          # 默认自评
+  # evaluator: "codex"       # Codex MCP 评审
+  # evaluator: "agent-speaker"  # 远程 Agent 评审
+  # evaluator: "dual"        # 双重评审
 ```
-/evolve
-  │
-  ├─ 1. 读 program.md 指令
-  ├─ 2. 读 memory（历史经验）
-  ├─ 3. 启动 worker subagent 执行任务
-  ├─ 4. 评估结果（完成度、效率、错误）
-  ├─ 5. 自我改进
-  │     ├─ 更新 agent-config
-  │     ├─ 优化 skill prompt
-  │     ├─ 写入 memory
-  │     └─ 记录到 results.tsv
-  └─ 下一轮循环
-```
 
-## 借鉴来源
-
-| 项目 | 借鉴什么 | 落地形式 |
+| 模式 | 工作方式 | 适用场景 |
 |------|---------|---------|
-| HyperAgents (Facebook) | 递归自改进：Meta-Agent 能改自己的改进策略 | Skill 可以修改自己的 prompt |
-| DGM (Darwin Gödel Machine) | Archive 保留历史最优变体 | Memory 记录有效策略，results.tsv 追踪分数 |
-| SWE-agent | Harness 设计：YAML 配置驱动 | agent-config.yaml 配置驱动 |
-| MetaBot | MetaMemory 跨迭代知识积累 | Claude Code 原生 Memory 系统 |
+| `self` | Phase 3 内部评估 | 默认，零配置 |
+| `codex` | 发 diff 给 Codex MCP，Codex 打分 | 有 Codex 订阅时 |
+| `agent-speaker` | 发 diff 给远程 Agent via Nostr | 团队互评 |
+| `dual` | 同时跑 Codex + Agent，取外部平均分 | 高可靠性需求 |
 
-## 文件结构
+**偏差追踪**：自评分数始终记录为 `self_score`，外部分数为 `external_score`。Phase 5 报告展示对比表，长期可观察自评偏差趋势。
+
+## 记忆系统
+
+### 分层加载（MemPalace 启发）
+
+| 层 | 内容 | 大小 | 加载时机 |
+|----|------|------|----------|
+| L0 | identity.md — 用户身份 | ~100 token | 每次 /evolve |
+| L1 | essential.md + blueprint.md | <2500 token | 每次 /evolve |
+| L2 | MEMORY.md 索引匹配 → 选择性读取 | 按需 | 任务相关时 |
+| L3 | grep 全量搜索 | 按需 | 知识缺口时 |
+
+### 时间有效性
+
+```yaml
+# 每个 memory 文件的 front-matter
+created: "2026-04-10"
+valid_from: "2026-04-10"
+valid_to: null          # null = 仍然有效
+importance: 4           # 1-5, essential.md 只收录 ≥4
+```
+
+### Essential Story（自动生成）
+
+Phase 4e 自动从 importance ≥ 4 的 memory 中提取 top 10，生成 `essential.md`（<500 token），作为 L1 层快速恢复上下文。
+
+## 组织上下文
+
+### 文件结构
 
 ```
-项目目录/
-├── .claude/
-│   ├── skills/               ← Skill（核心执行引擎）
-│   │   ├── evolve.md         ← 自进化主循环
-│   │   ├── evaluate.md       ← 自评估
-│   │   └── worker.md         ← 任务执行
-│   ├── memory/               ← Memory（经验积累）
-│   │   ├── MEMORY.md
-│   │   ├── strategies.md     ← 哪些策略有效/无效
-│   │   ├── patterns.md       ← 任务模式识别
-│   │   └── improvements.md   ← 改进记录
-│   └── settings.json         ← Hooks（自动触发）
-├── program.md                ← 人类写的指令
-├── agent-config.yaml         ← agent 可进化配置
-└── results.tsv               ← 迭代记录
+~/.claude/org/
+├── blueprint.md          ← 愿景 + 架构图 (<2000 token)
+├── components.yaml       ← 组件注册表 (名称/角色/依赖/状态)
+└── status.md             ← 自动生成的状态快照 (可删除重建)
 ```
 
-## 能帮你做什么
+### 跨机器同步
 
-1. **日常编码助手自动变强** — 每次任务后记录有效方法，下次自动用更好的策略
-2. **自动化重复工作** — 定时跑代码审查、日志分析、依赖更新检查，每次自动改进
-3. **知识积累不丢失** — Memory 跨 session 持久化，越用越聪明
-4. **零额外成本** — 全部跑在 Claude Code 订阅内
+通过 git repo 共享：
+```bash
+# 创建者
+/org-sync init          → 创建 blueprint + components.yaml
+/org-sync repo {url}    → 推送到共享 repo
 
-## 未来扩展
+# 新成员
+/org-sync repo {url}    → 克隆共享 org context
+/setup                  → 个人初始化
 
-如果后续获得 API Key，可以：
-- 接入 Claude Managed Agents（云端运行，不占本地资源）
-- 恢复 `agent-claude.py` + Docker 的 benchmark 驱动模式
-- 多 agent 并行迭代
+# 日常
+/org-sync pull          → 拉取最新
+/org-sync push          → 推送变更
+```
 
----
+## Agent 通信（规划中）
 
-## 使用范围：本仓库 vs 其他项目
+### 基于 Nostr 协议
 
-见下一节。
+```
+Agent A (dev)              Relay              Agent B (marketing)
+    |-- status_update ------>|                      |
+    |                        |--- push ------------>|
+    |                        |<--- trigger ---------|
+    |<-- request ------------|                      |
+    |-- response ----------->|--- push ------------>|
+```
+
+### 已完成
+
+- agent-speaker CLI：消息发送/查询/时间线
+- MCP Server：5 个 agent 工具（send_message, query_messages, timeline, init_identity, manage_relays）
+- 协议设计文档：消息类型系统、团队群组、心跳感知、流程触发链
+
+### 待开发
+
+- 专用 Relay（fork strfry）
+- Agent 注册（Kind 0 profile + agent 扩展）
+- 订阅机制（REQ 长连接）
+- 流程触发引擎
+- Agent 发现（按能力/角色搜索）
+
+## 进化历史
+
+### 借鉴来源
+
+| 项目 | 借鉴内容 | 落地形式 |
+|------|---------|---------|
+| HyperAgents (Meta) | 递归自改进、分阶段评估 | /evolve Phase 3 staged evaluation |
+| DGM (Darwin Gödel Machine) | Archive + 血统追踪 | results.log YAML 多文档 + parent 链 |
+| MemPalace | 分层记忆、temporal validity、auto-save hooks | L0-L3 + front-matter + hooks |
+| SWE-agent | YAML 配置驱动 | agent-config.yaml |
+
+### 从 AutoAgent 到 Agent24
+
+| 阶段 | 形态 | 进化对象 | 验证方式 |
+|------|------|---------|---------|
+| v1: AutoAgent | agent.py + Docker | 源代码 | ATIF 轨迹 + 外部验证器 |
+| v2: Agent24 Skills | SKILL.md + config | agent-config.yaml + memory | 自评估 (Phase 3) |
+| v3: + 外部评估 | + Codex/Agent MCP | 同上 | 自评 + 外部评审 |
+| v4: + 通信 (规划中) | + Agent Speaker | 同上 + 跨 Agent 协调 | 互评 + 组织级反馈 |
+
+## 安装
+
+```bash
+git clone https://github.com/jhfnetboy/Agent24.git
+cd Agent24
+bash install.sh    # 复制 skills 到 ~/.claude/skills/
+```
+
+## 配置文件
+
+- `agent-config.yaml` — Agent 的 "DNA"，/evolve 自动修改
+- `~/.claude/org/blueprint.md` — 组织蓝图 (<2000 token)
+- `~/.claude/org/components.yaml` — 组件注册表
+- `~/.claude/memory/` — 全局记忆
+- `.claude/memory/` — 项目级记忆
