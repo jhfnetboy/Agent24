@@ -1,0 +1,25 @@
+{
+  "schema": "baton-result/v1",
+  "schema_version": 1,
+  "task_id": "a24-linux-hw-20261015-104002",
+  "attempt_id": "903d853e-5a22-46c0-8ba0-aa47bb74d2c4",
+  "sequence": 1,
+  "status": "started",
+  "state": "started",
+  "base_sha": "a9b36ceee8a74f0c477b37836506933b09aafcf5",
+  "actual_branch": "baton/grokbot-a24-20261015-104002-linux-hw",
+  "result_sha": null,
+  "summary": "已接单，开始验证基线 a9b36ce",
+  "outcome": "已接单，开始验证基线 a9b36ce",
+  "tests": [],
+  "commands": [],
+  "touched_paths": [
+    "baton-result.json",
+    "baton-decisions.tsv"
+  ],
+  "limitations": [],
+  "blocker": null,
+  "next": null,
+  "next_action": null,
+  "updated_at": "2026-10-15T10:40:59+00:00"
+}

@@ -1,0 +1,2 @@
+time_utc	task_id	attempt_id	decision	reason
+2026-10-15T10:40:59Z	a24-linux-hw-20261015-104002	903d853e-5a22-46c0-8ba0-aa47bb74d2c4	start	接单并推送started回执
