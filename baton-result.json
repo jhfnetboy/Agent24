@@ -3,23 +3,99 @@
   "schema_version": 1,
   "task_id": "a24-linux-hw-20261015-104002",
   "attempt_id": "903d853e-5a22-46c0-8ba0-aa47bb74d2c4",
-  "sequence": 1,
-  "status": "started",
-  "state": "started",
+  "sequence": 2,
+  "status": "blocked",
+  "state": "blocked",
   "base_sha": "a9b36ceee8a74f0c477b37836506933b09aafcf5",
   "actual_branch": "baton/grokbot-a24-20261015-104002-linux-hw",
   "result_sha": null,
-  "summary": "已接单，开始验证基线 a9b36ce",
-  "outcome": "已接单，开始验证基线 a9b36ce",
-  "tests": [],
-  "commands": [],
+  "summary": "BLOCKED：base_branch ab/preview-hw-23-probe-disk 与 base_sha a9b36ce 在 GitHub jhfnetboy/Agent24 上不可见，未开始代码/测试工作",
+  "outcome": "BLOCKED：base_branch ab/preview-hw-23-probe-disk 与 base_sha a9b36ce 在 GitHub jhfnetboy/Agent24 上不可见，未开始代码/测试工作",
+  "tests": [
+    {
+      "command": "cargo test -p agent24-hw --locked",
+      "exit_code": null,
+      "note": "未执行：基线不可得"
+    },
+    {
+      "command": "cargo clippy -p agent24-hw --locked",
+      "exit_code": null,
+      "note": "未执行：基线不可得"
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "ls-remote",
+        "https://github.com/jhfnetboy/Agent24.git"
+      ],
+      "exit": 0,
+      "counts": {
+        "refs_listed": 20,
+        "refs_matching_base_branch": 0
+      }
+    },
+    {
+      "argv": [
+        "git",
+        "clone",
+        "--branch",
+        "ab/preview-hw-23-probe-disk",
+        "https://github.com/jhfnetboy/Agent24.git"
+      ],
+      "exit": 128,
+      "counts": {
+        "remote_branch_found": 0
+      }
+    },
+    {
+      "argv": [
+        "git",
+        "fetch",
+        "origin",
+        "a9b36ceee8a74f0c477b37836506933b09aafcf5"
+      ],
+      "exit": 128,
+      "counts": {
+        "objects_fetched": 0
+      }
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "repos/jhfnetboy/Agent24/commits/a9b36ceee8a74f0c477b37836506933b09aafcf5"
+      ],
+      "exit": 1,
+      "counts": {
+        "http_status": 422
+      }
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "repos/jhfnetboy/Agent24/branches/ab/preview-hw-23-probe-disk"
+      ],
+      "exit": 1,
+      "counts": {
+        "http_status": 404
+      }
+    }
+  ],
   "touched_paths": [
     "baton-result.json",
-    "baton-decisions.tsv"
+    "baton-decisions.tsv",
+    "docs/agent/cloud-wave37/a24-linux-hw-20261015-104002.md"
   ],
-  "limitations": [],
-  "blocker": null,
-  "next": null,
-  "next_action": null,
-  "updated_at": "2026-10-15T10:40:59+00:00"
+  "limitations": [
+    "本分支为孤立(orphan)回执分支，不基于a9b36ce，也不含任何代码；不可合并",
+    "未运行任何cargo命令，无Linux证据",
+    "Linux不是macOS验收；test-only不是产品批准"
+  ],
+  "blocker": "GitHub上不存在base_branch与base_sha（ls-remote无此ref；fetch SHA报not our ref；API commit 422、branch 404）",
+  "next": "协调者先把ab/preview-hw-23-probe-disk(a9b36ce)推到GitHub，再用新attempt_id重新handoff",
+  "next_action": "协调者先把ab/preview-hw-23-probe-disk(a9b36ce)推到GitHub，再用新attempt_id重新handoff",
+  "updated_at": "2026-10-15T10:41:14+00:00"
 }
