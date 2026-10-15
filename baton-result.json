@@ -3,14 +3,14 @@
   "schema_version": 1,
   "task_id": "a24-linux-hw-20261015-104002",
   "attempt_id": "903d853e-5a22-46c0-8ba0-aa47bb74d2c4",
-  "sequence": 2,
-  "status": "blocked",
-  "state": "blocked",
+  "sequence": 3,
+  "status": "cancelled",
+  "state": "cancelled",
   "base_sha": "a9b36ceee8a74f0c477b37836506933b09aafcf5",
   "actual_branch": "baton/grokbot-a24-20261015-104002-linux-hw",
   "result_sha": null,
-  "summary": "BLOCKED：base_branch ab/preview-hw-23-probe-disk 与 base_sha a9b36ce 在 GitHub jhfnetboy/Agent24 上不可见，未开始代码/测试工作",
-  "outcome": "BLOCKED：base_branch ab/preview-hw-23-probe-disk 与 base_sha a9b36ce 在 GitHub jhfnetboy/Agent24 上不可见，未开始代码/测试工作",
+  "summary": "CANCELLED：协调者取消（coordinator-canonical-repository-correction-only-this-job）；停工，未继续代码改动",
+  "outcome": "CANCELLED：协调者取消（coordinator-canonical-repository-correction-only-this-job）；停工，未继续代码改动",
   "tests": [
     {
       "command": "cargo test -p agent24-hw --locked",
@@ -92,10 +92,11 @@
   "limitations": [
     "本分支为孤立(orphan)回执分支，不基于a9b36ce，也不含任何代码；不可合并",
     "未运行任何cargo命令，无Linux证据",
-    "Linux不是macOS验收；test-only不是产品批准"
+    "Linux不是macOS验收；test-only不是产品批准",
+    "收到 baton.cancel，已停止；未推送额外代码改动"
   ],
-  "blocker": "GitHub上不存在base_branch与base_sha（ls-remote无此ref；fetch SHA报not our ref；API commit 422、branch 404）",
-  "next": "协调者先把ab/preview-hw-23-probe-disk(a9b36ce)推到GitHub，再用新attempt_id重新handoff",
-  "next_action": "协调者先把ab/preview-hw-23-probe-disk(a9b36ce)推到GitHub，再用新attempt_id重新handoff",
-  "updated_at": "2026-10-15T10:41:14+00:00"
+  "blocker": null,
+  "next": null,
+  "next_action": null,
+  "updated_at": "2026-10-15T10:46:56+00:00"
 }

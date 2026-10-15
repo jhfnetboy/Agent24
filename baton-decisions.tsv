@@ -1,3 +1,4 @@
 time_utc	task_id	attempt_id	decision	reason
 2026-10-15T10:40:59Z	a24-linux-hw-20261015-104002	903d853e-5a22-46c0-8ba0-aa47bb74d2c4	start	接单并推送started回执
 2026-10-15T10:41:14Z	a24-linux-hw-20261015-104002	903d853e-5a22-46c0-8ba0-aa47bb74d2c4	blocked	base_branch与base_sha在GitHub不可见；不以main或快照替代；推orphan回执分支
+2026-10-15T10:46:56Z	a24-linux-hw-20261015-104002	903d853e-5a22-46c0-8ba0-aa47bb74d2c4	cancelled	coordinator-canonical-repository-correction-only-this-job；停掉未推送改动并推送cancelled回执
