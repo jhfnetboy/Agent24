@@ -1,0 +1,26 @@
+{
+  "schema": "baton-result/v1",
+  "schema_version": 1,
+  "task_id": "a24-wal-race-20261015-104002",
+  "attempt_id": "5e68906e-f9eb-43e2-a2ed-d04f243a51d0",
+  "sequence": 1,
+  "status": "started",
+  "state": "started",
+  "base_sha": "a9b36ceee8a74f0c477b37836506933b09aafcf5",
+  "actual_branch": "baton/grokbot-a24-20261015-104002-wal-race",
+  "result_sha": null,
+  "summary": "已接单，开始校验GitHub可见baseline",
+  "outcome": "已接单，开始校验GitHub可见baseline",
+  "tests": [],
+  "commands": [],
+  "touched_paths": [
+    "baton-result.json"
+  ],
+  "limitations": [
+    "Linux云端，非macOS验收"
+  ],
+  "blocker": null,
+  "next": null,
+  "next_action": null,
+  "updated_at": "2026-10-15T10:41:19+00:00"
+}
