@@ -1,0 +1,3 @@
+timestamp	task_id	attempt_id	decision	reason
+2026-10-15T10:41:39Z	a24-wal-race-20261015-104002	5e68906e-f9eb-43e2-a2ed-d04f243a51d0	started-orphan-receipt-branch	base分支不在GitHub，无法从base拉分支；用无历史分支仅承载回执
+2026-10-15T10:41:39Z	a24-wal-race-20261015-104002	5e68906e-f9eb-43e2-a2ed-d04f243a51d0	blocked	base_branch与base_sha a9b36cee在jhfnetboy/Agent24均不存在(ls-remote无;API 422/404)；不替换基线、不跑cargo

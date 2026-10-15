@@ -3,24 +3,88 @@
   "schema_version": 1,
   "task_id": "a24-wal-race-20261015-104002",
   "attempt_id": "5e68906e-f9eb-43e2-a2ed-d04f243a51d0",
-  "sequence": 1,
-  "status": "started",
-  "state": "started",
+  "sequence": 2,
+  "status": "blocked",
+  "state": "blocked",
   "base_sha": "a9b36ceee8a74f0c477b37836506933b09aafcf5",
   "actual_branch": "baton/grokbot-a24-20261015-104002-wal-race",
   "result_sha": null,
-  "summary": "已接单，开始校验GitHub可见baseline",
-  "outcome": "已接单，开始校验GitHub可见baseline",
+  "summary": "BLOCKED：指定baseline在GitHub不可见，未做代码修改与测试",
+  "outcome": "BLOCKED：指定baseline在GitHub不可见，未做代码修改与测试",
   "tests": [],
-  "commands": [],
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "ls-remote",
+        "https://github.com/jhfnetboy/Agent24.git"
+      ],
+      "exit": 0,
+      "counts": {
+        "refs": 20,
+        "matching_base_branch": 0,
+        "matching_base_sha": 0
+      }
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "repos/jhfnetboy/Agent24/commits/a9b36ceee8a74f0c477b37836506933b09aafcf5"
+      ],
+      "exit": 1,
+      "counts": {
+        "http_status": 422
+      }
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "repos/jhfnetboy/Agent24/branches/ab/preview-hw-23-probe-disk"
+      ],
+      "exit": 1,
+      "counts": {
+        "http_status": 404
+      }
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "repos/jhfnetboy/Agent24/contents/apps"
+      ],
+      "exit": 1,
+      "counts": {
+        "http_status": 404
+      }
+    },
+    {
+      "argv": [
+        "gh",
+        "search",
+        "commits",
+        "--hash",
+        "a9b36ceee8a74f0c477b37836506933b09aafcf5"
+      ],
+      "exit": 0,
+      "counts": {
+        "results": 0
+      }
+    }
+  ],
   "touched_paths": [
-    "baton-result.json"
+    "baton-result.json",
+    "baton-decisions.tsv",
+    "docs/agent/cloud-wave37/a24-wal-race-20261015-104002.md"
   ],
   "limitations": [
-    "Linux云端，非macOS验收"
+    "Linux云端，非macOS验收",
+    "test-only任务，非产品批准",
+    "base不可见，未执行任何cargo命令"
   ],
-  "blocker": null,
-  "next": null,
-  "next_action": null,
-  "updated_at": "2026-10-15T10:41:19+00:00"
+  "blocker": "jhfnetboy/Agent24 上不存在 ab/preview-hw-23-probe-disk 分支，也不存在提交 a9b36ceee8a74f0c477b37836506933b09aafcf5（ls-remote 无；API 422/404；apps/ 目录在 GitHub main 上不存在）",
+  "next": "协调者将含a9b36cee的base_branch推到GitHub可见的jhfnetboy/Agent24（或给出正确仓库URL）后，用新attempt重新handoff",
+  "next_action": "协调者将含a9b36cee的base_branch推到GitHub可见的jhfnetboy/Agent24（或给出正确仓库URL）后，用新attempt重新handoff",
+  "updated_at": "2026-10-15T10:41:39+00:00"
 }
